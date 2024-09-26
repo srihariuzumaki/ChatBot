@@ -14,6 +14,8 @@ pip install -r requirements.txt
 pip install python-dotenv
 python app.py
 
+not : if you are trying to run this locally don't forget to add your own API key to run the script.But you can check the live version for demo
+
 
 Usage
 Open your browser and go to http://127.0.0.1:5000/ to interact with the chatbot.

@@ -1,0 +1,20 @@
+# Flask Chatbot
+
+A simple chatbot application built using Flask and the Gemini API.
+
+## Installation
+
+## Ignore chat.py
+
+1. Clone the repository:
+   bash
+   git clone https://github.com/<USERNAME>/<REPO>.git
+   cd <REPO>
+pip install -r requirements.txt
+pip install python-dotenv
+python app.py
+
+
+Usage
+Open your browser and go to http://127.0.0.1:5000/ to interact with the chatbot.
+

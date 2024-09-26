@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Chatbot</title>
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background-color: #f8f9fa;
+      }
+      .chat-container {
+        max-width: 600px;
+        margin: 50px auto;
+        padding: 20px;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        background-color: #ffffff;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      .message {
+        margin: 10px 0;
+      }
+      .user {
+        text-align: right;
+        color: #007bff;
+      }
+      .bot {
+        text-align: left;
+        color: #28a745;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chat-container">
+      <h2 class="text-center">AI Chatbot</h2>
+      <div
+        id="chat-output"
+        class="mb-3"
+        style="max-height: 400px; overflow-y: auto"
+      ></div>
+      <form id="chat-form" class="form-inline">
+        <input
+          type="text"
+          id="user_input"
+          class="form-control mr-2"
+          placeholder="Type your question..."
+          required
+          style="flex-grow: 1"
+        />
+        <button type="submit" class="btn btn-primary">Send</button>
+      </form>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+      const form = document.getElementById("chat-form");
+      const chatOutput = document.getElementById("chat-output");
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const userInput = document.getElementById("user_input").value;
+
+        const response = await fetch("/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ user_input: userInput }),
+        });
+
+        const botResponse = await response.text();
+        chatOutput.innerHTML += `<div class="message user"><strong>You:</strong> ${userInput}</div>`;
+        chatOutput.innerHTML += `<div class="message bot"><strong>Bot:</strong> ${botResponse}</div>`;
+        chatOutput.scrollTop = chatOutput.scrollHeight; // Auto scroll to the bottom
+        document.getElementById("user_input").value = "";
+      });
+    </script>
+  </body>
+</html>

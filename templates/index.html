@@ -4,14 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI Chatbot</title>
-    <!-- Bootstrap CSS -->
     <link
       href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
       rel="stylesheet"
     />
     <style>
       body {
-        background-color: #f8f9fa;
+        background-color: azure;
       }
       .chat-container {
         max-width: 600px;
@@ -19,30 +18,53 @@
         padding: 20px;
         border: 1px solid #dee2e6;
         border-radius: 5px;
-        background-color: #ffffff;
+        background-color: powderblue;
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
       }
       .message {
         margin: 10px 0;
+        display: flex;
+        align-items: center;
       }
       .user {
+        justify-content: flex-end;
         text-align: right;
         color: #007bff;
       }
       .bot {
+        justify-content: flex-start;
         text-align: left;
         color: #28a745;
+      }
+      .profile-pic {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        margin-right: 10px;
+      }
+      .user .profile-pic {
+        margin-right: 0;
+        margin-left: 10px;
+      }
+      pre,
+      code {
+        background-color: #f1f1f1;
+        padding: 5px;
+        border-radius: 5px;
+        white-space: pre-wrap;
       }
     </style>
   </head>
   <body>
     <div class="chat-container">
-      <h2 class="text-center">AI Chatbot</h2>
+      <h2 class="text-center">Personal Bot</h2>
+
       <div
         id="chat-output"
         class="mb-3"
         style="max-height: 400px; overflow-y: auto"
       ></div>
+
       <form id="chat-form" class="form-inline">
         <input
           type="text"
@@ -52,13 +74,13 @@
           required
           style="flex-grow: 1"
         />
-        <button type="submit" class="btn btn-primary">Send</button>
+        <button type="submit" class="btn btn-primary">Send</button>    
       </form>
     </div>
-
-    <!-- Bootstrap JS and dependencies -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
       const form = document.getElementById("chat-form");
@@ -75,11 +97,32 @@
         });
 
         const botResponse = await response.text();
-        chatOutput.innerHTML += `<div class="message user"><strong>You:</strong> ${userInput}</div>`;
-        chatOutput.innerHTML += `<div class="message bot"><strong>Bot:</strong> ${botResponse}</div>`;
+        chatOutput.innerHTML += `<div class="message user"><strong>You:</strong> ${userInput}
+          <img src="https://icons.veryicon.com/png/o/internet--web/prejudice/user-128.png" alt="User Profile" class="profile-pic" />
+          </div>`;
+        chatOutput.innerHTML += `<div class="message bot">
+           <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS_7KdTr0xYwdNwnnSKZoZqp3BWqs2wbpQB5Q&s" alt="Bot Profile" class="profile-pic" /><strong>Bot:</strong><br><br> ${formatBotResponse(
+             botResponse
+           )}</div>`;
+
         chatOutput.scrollTop = chatOutput.scrollHeight; // Auto scroll to the bottom
         document.getElementById("user_input").value = "";
       });
+      function formatBotResponse(response) {
+        // Convert newlines in bot response to line breaks
+        let formattedResponse = response.replace(/\n/g, "<br>");
+        // Wrap code snippets in <pre><code>
+        formattedResponse = formattedResponse.replace(
+          /```([\s\S]*?)```/g,
+          "<pre><code>$1</code></pre>"
+        );
+        // Convert URLs to clickable links
+        formattedResponse = formattedResponse.replace(
+          /(https?:\/\/[^\s]+)/g,
+          '<a href="$1" target="_blank">$1</a>'
+        );
+        return formattedResponse;
+      }
     </script>
   </body>
 </html>

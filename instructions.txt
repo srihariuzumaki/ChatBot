@@ -4,7 +4,7 @@ A simple chatbot application built using Flask and the Gemini API.
 
 ## Installation
 
-## Ignore chat.py
+
 
 1. Clone the repository:
    bash
@@ -13,6 +13,8 @@ A simple chatbot application built using Flask and the Gemini API.
 pip install -r requirements.txt
 pip install python-dotenv
 python app.py
+
+not : if you are trying to run this locally don't forget to add your own API key to run the script.But you can check the live version for demo
 
 
 Usage

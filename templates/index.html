@@ -10,7 +10,8 @@
     />
     <style>
       body {
-        background-color: azure;
+        background-color: #bde1e3;
+        font-family: garamond;
       }
       .chat-container {
         max-width: 600px;
@@ -18,7 +19,7 @@
         padding: 20px;
         border: 1px solid #dee2e6;
         border-radius: 5px;
-        background-color: powderblue;
+        background-color: rgb(132, 127, 155);
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
       }
       .message {
@@ -26,11 +27,11 @@
       }
       .user {
         text-align: right;
-        color: #007bff;
+        color: #141216;
       }
       .bot {
         text-align: left;
-        color: #28a745;
+        color: rgb(252, 252, 252);
       }
       .profile-pic {
         width: 40px;
@@ -49,11 +50,37 @@
         border-radius: 5px;
         white-space: pre-wrap;
       }
+      .btn-primary {
+        border-radius: 5px;
+
+        background-color: #676767;
+        font-family: garamond;
+        border: none;
+        padding: 5px 8px;
+        margin: auto;
+        padding: auto;
+        margin-top: 5px;
+        transition: transform 0.2s;
+      }
+      .btn-primary:hover {
+        background-color: #dee2e6;
+        color: #141216;
+        transform: scale(1.1);
+        box-shadow: 0 8px 12px 0;
+      }
+      .text-center {
+        font-family: garamond;
+        font-weight: bold;
+      }
+      .form-inline {
+        font-family: garamond;
+        border-radius: 5px;
+      }
     </style>
   </head>
   <body>
     <div class="chat-container">
-      <h2 class="text-center">Personal Bot</h2>
+      <h2 class="text-center">J A R V I S</h2>
 
       <div
         id="chat-output"
@@ -70,7 +97,7 @@
           required
           style="flex-grow: 1"
         />
-        <button type="submit" class="btn btn-primary">Send</button>
+        <button type="submit" class="btn-primary">Send</button>
       </form>
     </div>
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>

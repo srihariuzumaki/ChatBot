@@ -8,6 +8,10 @@
       href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
       rel="stylesheet"
     />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
     <style>
       body {
         background-color: #bde1e3;
@@ -76,6 +80,40 @@
         font-family: garamond;
         border-radius: 5px;
       }
+      .code-block {
+        position: relative;
+        background-color: #f1f1f1;
+        border-radius: 5px;
+        margin: 10px 0;
+      }
+      .code-header {
+        padding: 5px;
+        border-bottom: 1px solid #ddd;
+        background-color: #e1e1e1;
+        border-radius: 5px 5px 0 0;
+        text-align: right;
+      }
+      .copy-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 5px 10px;
+        color: #666;
+        transition: color 0.2s;
+      }
+      .copy-btn:hover {
+        color: #000;
+      }
+      .fa-check {
+        color: #28a745;
+      }
+      pre {
+        margin: 0;
+        padding: 10px;
+      }
+      code {
+        font-family: monospace;
+      }
     </style>
   </head>
   <body>
@@ -132,12 +170,11 @@
         document.getElementById("user_input").value = "";
       });
       function formatBotResponse(response) {
-        // Convert newlines in bot response to line breaks
         let formattedResponse = response.replace(/\n/g, "<br>");
-        // Wrap code snippets in <pre><code>
+        // Wrap code snippets in <pre><code> with copy button
         formattedResponse = formattedResponse.replace(
           /```([\s\S]*?)```/g,
-          "<pre><code>$1</code></pre>"
+          '<div class="code-block"><div class="code-header"><button class="copy-btn" onclick="copyCode(this)"><i class="fas fa-copy"></i></button></div><pre><code>$1</code></pre></div>'
         );
         // Convert URLs to clickable links
         formattedResponse = formattedResponse.replace(
@@ -145,6 +182,24 @@
           '<a href="$1" target="_blank">$1</a>'
         );
         return formattedResponse;
+      }
+
+      // Add copy function
+      function copyCode(button) {
+        const codeBlock = button.closest(".code-block").querySelector("code");
+        const textToCopy = codeBlock.textContent;
+
+        navigator.clipboard.writeText(textToCopy).then(() => {
+          // Change icon temporarily to show success
+          const icon = button.querySelector("i");
+          icon.classList.remove("fa-copy");
+          icon.classList.add("fa-check");
+
+          setTimeout(() => {
+            icon.classList.remove("fa-check");
+            icon.classList.add("fa-copy");
+          }, 2000);
+        });
       }
     </script>
   </body>

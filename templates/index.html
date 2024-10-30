@@ -213,9 +213,51 @@
           transform: translateY(-8px);
         }
       }
+
+      /* Add these new styles for the dialog */
+      .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      }
+
+      .welcome-dialog {
+        background-color: rgba(13, 17, 23, 0.95);
+        border: 1px solid #0ff;
+        border-radius: 15px;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+      }
+
+      .welcome-dialog h3 {
+        color: #0ff;
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
+      .welcome-dialog input {
+        margin-bottom: 15px;
+      }
     </style>
   </head>
   <body>
+    <div id="welcomeModal" class="modal-backdrop">
+      <div class="welcome-dialog">
+        <h3>Welcome to J.A.R.V.I.S.</h3>
+        <input type="text" id="userName" class="form-control" placeholder="Your Name" required>
+        <input type="number" id="userAge" class="form-control" placeholder="Your Age" required>
+        <button onclick="submitUserInfo()" class="btn-primary w-100">Enter</button>
+      </div>
+    </div>
+
     <div class="chat-container">
       <h2 class="text-center">
         <i class="fas fa-circle-notch"></i> J.A.R.V.I.S.
@@ -250,17 +292,58 @@
       const form = document.getElementById("chat-form");
       const chatOutput = document.getElementById("chat-output");
 
+      let userInfo = {
+        name: '',
+        age: 0
+      };
+
+      function submitUserInfo() {
+        const name = document.getElementById('userName').value;
+        const age = document.getElementById('userAge').value;
+        
+        if (!name || !age) {
+          alert('Please fill in both fields');
+          return;
+        }
+        
+        // Send user info to backend
+        fetch('/save_user_info', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            'name': name,
+            'age': age
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.status === 'success') {
+            // Store locally for display purposes
+            userInfo.name = name;
+            userInfo.age = age;
+            // Hide the modal
+            document.getElementById('welcomeModal').style.display = 'none';
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('There was an error saving your information. Please try again.');
+        });
+      }
+
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
         const userInput = document.getElementById("user_input").value;
 
-        // Add user message
+        // Update the user message to include their name
         chatOutput.innerHTML += `
           <div class="message-wrapper user-wrapper">
             <div class="message user">
               <img src="https://img.freepik.com/free-vector/blue-circle-with-white-user_78370-4707.jpg" alt="User Profile" class="profile-pic" />
               <div class="message-content">
-                <strong>You:</strong> ${userInput}
+                <strong>${userInfo.name}:</strong> ${userInput}
               </div>
             </div>
           </div>`;

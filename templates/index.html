@@ -246,21 +246,97 @@
       .welcome-dialog input {
         margin-bottom: 15px;
       }
+
+      .send-btn {
+        width: 50px;
+        height: 45px;
+        padding: auto;
+        display: flex;
+        border-radius: 25%;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        
+      }
+
+      .send-btn i {
+        font-size: 1.2em;
+        transition: all 0.3s ease;
+      }
+
+      .send-btn:hover i {
+        transform: translateX(3px);
+        color: #fff;
+      }
+
+      .voice-model-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 999;
+        background: rgba(13, 17, 23, 0.95);
+        border: 1px solid #0ff;
+        border-radius: 15px;
+        padding: 10px;
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+      }
+
+      .voice-model-toggle {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: rgba(13, 17, 23, 0.95);
+        border: 2px solid #0ff;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 1000;
+        color: #0ff;
+        transition: all 0.3s ease;
+      }
+
+      .voice-model-toggle:hover {
+        background-color: rgba(0, 255, 255, 0.2);
+        box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+      }
+
+      .voice-model-iframe {
+        border: none;
+        background: transparent;
+      }
     </style>
   </head>
   <body>
     <div id="welcomeModal" class="modal-backdrop">
       <div class="welcome-dialog">
         <h3>Welcome to J.A.R.V.I.S.</h3>
-        <input type="text" id="userName" class="form-control" placeholder="Your Name" required>
-        <input type="number" id="userAge" class="form-control" placeholder="Your Age" required>
-        <button onclick="submitUserInfo()" class="btn-primary w-100">Enter</button>
+        <input
+          type="text"
+          id="userName"
+          class="form-control"
+          placeholder="Your Name"
+          required
+        />
+        <input
+          type="number"
+          id="userAge"
+          class="form-control"
+          placeholder="Your Age"
+          required
+        />
+        <button onclick="submitUserInfo()" class="btn-primary w-100">
+          Enter
+        </button>
       </div>
     </div>
 
     <div class="chat-container">
       <h2 class="text-center">
-        <i class="fas fa-circle-notch"></i> J.A.R.V.I.S.
+        <i class="fas fa-circle-notch"></i> J.A.R.V.I.S
       </h2>
 
       <div
@@ -278,8 +354,12 @@
           required
           style="flex: 1 1 auto"
         />
-        <button type="submit" class="btn-primary" style="flex: 0 0 auto">
-          Send
+        <button
+          type="submit"
+          class="btn-primary send-btn"
+          style="flex: 0 0 auto"
+        >
+          <i class="fas fa-paper-plane"></i>
         </button>
       </form>
     </div>
@@ -293,44 +373,42 @@
       const chatOutput = document.getElementById("chat-output");
 
       let userInfo = {
-        name: '',
-        age: 0
+        name: "",
+        age: 0,
       };
 
       function submitUserInfo() {
-        const name = document.getElementById('userName').value;
-        const age = document.getElementById('userAge').value;
-        
+        const name = document.getElementById("userName").value;
+        const age = document.getElementById("userAge").value;
+
         if (!name || !age) {
-          alert('Please fill in both fields');
+          alert("Please fill in both fields");
           return;
         }
-        
-        // Send user info to backend
-        fetch('/save_user_info', {
-          method: 'POST',
+
+        fetch("/save_user_info", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
+            "Content-Type": "application/x-www-form-urlencoded",
           },
           body: new URLSearchParams({
-            'name': name,
-            'age': age
+            name: name,
+            age: age,
+          }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.status === "success") {
+              userInfo.name = name;
+              userInfo.age = age;
+              document.getElementById("welcomeModal").style.display = "none";
+              sendUserInfoToVoiceModel();
+            }
           })
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.status === 'success') {
-            // Store locally for display purposes
-            userInfo.name = name;
-            userInfo.age = age;
-            // Hide the modal
-            document.getElementById('welcomeModal').style.display = 'none';
-          }
-        })
-        .catch(error => {
-          console.error('Error:', error);
-          alert('There was an error saving your information. Please try again.');
-        });
+          .catch((error) => {
+            console.error("Error:", error);
+            alert("There was an error saving your information. Please try again.");
+          });
       }
 
       form.addEventListener("submit", async (event) => {
@@ -390,8 +468,11 @@
           </div>`;
 
         chatOutput.scrollTop = chatOutput.scrollHeight;
+
+        // Clear the input field for new message
         document.getElementById("user_input").value = "";
       });
+
       function formatBotResponse(response) {
         let formattedResponse = response.replace(/\n/g, "<br>");
         // Wrap code snippets in <pre><code> with copy button
@@ -424,6 +505,49 @@
           }, 2000);
         });
       }
+
+      function toggleVoiceModel() {
+        const container = document.getElementById('voiceModelContainer');
+        const button = document.getElementById('voiceModelToggle');
+        const icon = button.querySelector('i');
+
+        if (container.style.display === 'none') {
+          container.style.display = 'block';
+          icon.classList.remove('fa-microphone');
+          icon.classList.add('fa-times');
+        } else {
+          container.style.display = 'none';
+          icon.classList.remove('fa-times');
+          icon.classList.add('fa-microphone');
+        }
+      }
+
+      // Add this function to send user info to iframe
+      function sendUserInfoToVoiceModel() {
+        const iframe = document.getElementById('audio_iframe');
+        const message = {
+          type: 'userInfo',
+          name: userInfo.name,
+          age: userInfo.age
+        };
+        iframe.contentWindow.postMessage(message, '*');
+      }
     </script>
+
+    <div id="voiceModelContainer" class="voice-model-container" style="display: none;">
+      <iframe
+        id="audio_iframe"
+        src="https://widget.synthflow.ai/widget/v2/1732427073608x408096402737765800/1732427073515x457772843051288800"
+        allow="microphone"
+        width="400px"
+        height="600px"
+        class="voice-model-iframe"
+        data-user-context="true"
+      ></iframe>
+    </div>
+
+    <button id="voiceModelToggle" class="voice-model-toggle" onclick="toggleVoiceModel()">
+      <i class="fas fa-microphone"></i>
+    </button>
   </body>
 </html>

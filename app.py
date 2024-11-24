@@ -52,7 +52,7 @@ def ask():
     # Create context-aware message with explicit instruction about name usage
     context_message = (
         f"Remember that you're talking to {user_name}, who is {user_age} years old. "
-        f"Always refer to them by their name ({user_name}) when appropriate in your responses. "
+        
         f"User's message: {user_input}"
     )
     

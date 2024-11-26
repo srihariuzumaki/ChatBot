@@ -269,45 +269,15 @@
         color: #fff;
       }
 
-      .voice-model-container {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        z-index: 999;
-        background: rgba(13, 17, 23, 0.95);
-        border: 1px solid #0ff;
-        border-radius: 15px;
-        padding: 10px;
-        box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
-      }
+      
 
-      .voice-model-toggle {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        background: rgba(13, 17, 23, 0.95);
-        border: 2px solid #0ff;
-        border-radius: 50%;
-        width: 50px;
-        height: 50px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        z-index: 1000;
-        color: #0ff;
-        transition: all 0.3s ease;
-      }
+      
+      
 
-      .voice-model-toggle:hover {
-        background-color: rgba(0, 255, 255, 0.2);
-        box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
-      }
-
-      .voice-model-iframe {
-        border: none;
-        background: transparent;
-      }
+      
+      
+    
+      
     </style>
   </head>
   <body>
@@ -414,8 +384,8 @@
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
         const userInput = document.getElementById("user_input").value;
+        document.getElementById("user_input").value = "";
 
-        // Update the user message to include their name
         chatOutput.innerHTML += `
           <div class="message-wrapper user-wrapper">
             <div class="message user">
@@ -426,7 +396,6 @@
             </div>
           </div>`;
 
-        // Add typing indicator
         chatOutput.innerHTML += `
           <div class="message-wrapper bot-wrapper" id="typing-indicator">
             <div class="message bot">
@@ -441,7 +410,6 @@
 
         chatOutput.scrollTop = chatOutput.scrollHeight;
 
-        // Make the API call
         const response = await fetch("/ask", {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -450,13 +418,10 @@
 
         const botResponse = await response.text();
 
-        // Add artificial delay (1.5 seconds)
         await new Promise((resolve) => setTimeout(resolve, 1500));
 
-        // Remove typing indicator
         document.getElementById("typing-indicator").remove();
 
-        // Add bot response
         chatOutput.innerHTML += `
           <div class="message-wrapper bot-wrapper">
             <div class="message bot">
@@ -468,9 +433,6 @@
           </div>`;
 
         chatOutput.scrollTop = chatOutput.scrollHeight;
-
-        // Clear the input field for new message
-        document.getElementById("user_input").value = "";
       });
 
       function formatBotResponse(response) {
@@ -506,48 +468,11 @@
         });
       }
 
-      function toggleVoiceModel() {
-        const container = document.getElementById('voiceModelContainer');
-        const button = document.getElementById('voiceModelToggle');
-        const icon = button.querySelector('i');
-
-        if (container.style.display === 'none') {
-          container.style.display = 'block';
-          icon.classList.remove('fa-microphone');
-          icon.classList.add('fa-times');
-        } else {
-          container.style.display = 'none';
-          icon.classList.remove('fa-times');
-          icon.classList.add('fa-microphone');
-        }
-      }
+     
 
       // Add this function to send user info to iframe
-      function sendUserInfoToVoiceModel() {
-        const iframe = document.getElementById('audio_iframe');
-        const message = {
-          type: 'userInfo',
-          name: userInfo.name,
-          age: userInfo.age
-        };
-        iframe.contentWindow.postMessage(message, '*');
-      }
+      
     </script>
 
-    <div id="voiceModelContainer" class="voice-model-container" style="display: none;">
-      <iframe
-        id="audio_iframe"
-        src="https://widget.synthflow.ai/widget/v2/1732427073608x408096402737765800/1732427073515x457772843051288800"
-        allow="microphone"
-        width="400px"
-        height="600px"
-        class="voice-model-iframe"
-        data-user-context="true"
-      ></iframe>
-    </div>
-
-    <button id="voiceModelToggle" class="voice-model-toggle" onclick="toggleVoiceModel()">
-      <i class="fas fa-microphone"></i>
-    </button>
   </body>
 </html>

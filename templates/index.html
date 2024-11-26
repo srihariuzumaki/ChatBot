@@ -269,9 +269,62 @@
         color: #fff;
       }
 
-      
+      .modal {
+        display: block;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+      }
+
+      .modal-content {
+        background-color: rgba(13, 17, 23, 0.95);
+        margin: 15% auto;
+        padding: 20px;
+        border: 1px solid #0ff;
+        border-radius: 15px;
+        width: 300px;
+        color: #fff;
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+      }
+
+      .modal-content h2 {
+        color: #0ff;
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
+      .modal-content input {
+        width: 100%;
+        padding: 8px;
+        margin: 10px 0;
+        background-color: rgba(13, 17, 23, 0.8);
+        border: 1px solid #0ff;
+        color: #fff;
+        border-radius: 5px;
+      }
+
+      .modal-content button {
+        width: 100%;
+        padding: 10px;
+        background-color: transparent;
+        border: 2px solid #0ff;
+        color: #0ff;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .modal-content button:hover {
+        background-color: rgba(0, 255, 255, 0.2);
+        color: #fff;
+      }
 
       
+
       
 
       
@@ -281,26 +334,12 @@
     </style>
   </head>
   <body>
-    <div id="welcomeModal" class="modal-backdrop">
-      <div class="welcome-dialog">
-        <h3>Welcome to J.A.R.V.I.S.</h3>
-        <input
-          type="text"
-          id="userName"
-          class="form-control"
-          placeholder="Your Name"
-          required
-        />
-        <input
-          type="number"
-          id="userAge"
-          class="form-control"
-          placeholder="Your Age"
-          required
-        />
-        <button onclick="submitUserInfo()" class="btn-primary w-100">
-          Enter
-        </button>
+    <div id="welcomeModal" class="modal">
+      <div class="modal-content">
+        <h2>Welcome to J.A.R.V.I.S.</h2>
+        <input type="text" id="userName" placeholder="Enter your name" required>
+        <input type="text" id="userAge" placeholder="Enter your age" required>
+        <button onclick="submitUserInfo()">Enter</button>
       </div>
     </div>
 
@@ -343,8 +382,8 @@
       const chatOutput = document.getElementById("chat-output");
 
       let userInfo = {
-        name: "",
-        age: 0,
+        name: '',
+        age: ''
       };
 
       function submitUserInfo() {
@@ -356,29 +395,38 @@
           return;
         }
 
-        fetch("/save_user_info", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: new URLSearchParams({
-            name: name,
-            age: age,
-          }),
-        })
-          .then((response) => response.json())
-          .then((data) => {
-            if (data.status === "success") {
-              userInfo.name = name;
-              userInfo.age = age;
-              document.getElementById("welcomeModal").style.display = "none";
-              sendUserInfoToVoiceModel();
+        // Using XMLHttpRequest instead of fetch
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/save_user_info", true);
+        xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+        
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState === 4) {
+            console.log("Response:", xhr.responseText);  // Debug log
+            
+            if (xhr.status === 200) {
+              try {
+                const response = JSON.parse(xhr.responseText);
+                if (response.status === 'success') {
+                  userInfo.name = name;
+                  userInfo.age = age;
+                  document.getElementById("welcomeModal").style.display = "none";
+                } else {
+                  throw new Error(response.message || 'Unknown error');
+                }
+              } catch (e) {
+                console.error("Error parsing response:", e);
+                alert("There was an error processing the response");
+              }
+            } else {
+              console.error("Server returned status:", xhr.status);
+              alert("There was an error saving your information. Please try again.");
             }
-          })
-          .catch((error) => {
-            console.error("Error:", error);
-            alert("There was an error saving your information. Please try again.");
-          });
+          }
+        };
+
+        const data = `name=${encodeURIComponent(name)}&age=${encodeURIComponent(age)}`;
+        xhr.send(data);
       }
 
       form.addEventListener("submit", async (event) => {
@@ -386,6 +434,7 @@
         const userInput = document.getElementById("user_input").value;
         document.getElementById("user_input").value = "";
 
+        // Add user message
         chatOutput.innerHTML += `
           <div class="message-wrapper user-wrapper">
             <div class="message user">
@@ -396,8 +445,11 @@
             </div>
           </div>`;
 
-        chatOutput.innerHTML += `
-          <div class="message-wrapper bot-wrapper" id="typing-indicator">
+        // Add typing indicator
+        const typingIndicator = document.createElement('div');
+        typingIndicator.id = "typing-indicator";
+        typingIndicator.innerHTML = `
+          <div class="message-wrapper bot-wrapper">
             <div class="message bot">
               <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS_7KdTr0xYwdNwnnSKZoZqp3BWqs2wbpQB5Q&s" alt="Bot Profile" class="profile-pic" />
               <div class="message-content typing-indicator">
@@ -407,21 +459,25 @@
               </div>
             </div>
           </div>`;
-
+        chatOutput.appendChild(typingIndicator);
         chatOutput.scrollTop = chatOutput.scrollHeight;
 
-        const response = await fetch("/ask", {
+        // Start fetching response immediately
+        const responsePromise = fetch("/ask", {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
           body: new URLSearchParams({ user_input: userInput }),
         });
 
+        // Show typing indicator for minimum 500ms
+        const minTypingTime = new Promise(resolve => setTimeout(resolve, 500));
+
+        // Wait for both the response and minimum typing time
+        const [response] = await Promise.all([responsePromise, minTypingTime]);
         const botResponse = await response.text();
 
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
+        // Remove typing indicator and add bot response
         document.getElementById("typing-indicator").remove();
-
         chatOutput.innerHTML += `
           <div class="message-wrapper bot-wrapper">
             <div class="message bot">
@@ -468,7 +524,10 @@
         });
       }
 
-     
+      // Show modal when page loads
+      window.onload = function() {
+          document.getElementById("welcomeModal").style.display = "block";
+      };
 
       // Add this function to send user info to iframe
       

@@ -397,6 +397,15 @@
           required
           style="flex: 1 1 auto"
         />
+        <label for="file-upload" class="btn-primary send-btn" style="flex: 0 0 auto; margin: 0 5px; cursor: pointer;">
+          <i class="fas fa-paperclip"></i>
+        </label>
+        <input 
+          type="file" 
+          id="file-upload" 
+          style="display: none;"
+          accept=".txt,.pdf,.doc,.docx"
+        />
         <button
           type="submit"
           class="btn-primary send-btn"
@@ -592,6 +601,65 @@
 
         // Force reload video
         video.load();
+      });
+    </script>
+
+    <script>
+      // Add file upload handling
+      document.getElementById('file-upload').addEventListener('change', async function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+          // Add upload indicator to chat
+          chatOutput.innerHTML += `
+            <div class="message-wrapper bot-wrapper">
+              <div class="message bot">
+                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS_7KdTr0xYwdNwnnSKZoZqp3BWqs2wbpQB5Q&s" alt="Bot Profile" class="profile-pic" />
+                <div class="message-content">
+                  <strong>Bot:</strong><br><br>Uploading file: ${file.name}...
+                </div>
+              </div>
+            </div>`;
+          
+          const response = await fetch('/upload', {
+            method: 'POST',
+            body: formData
+          });
+
+          const result = await response.json();
+          
+          if (result.status === 'success') {
+            chatOutput.innerHTML += `
+              <div class="message-wrapper bot-wrapper">
+                <div class="message bot">
+                  <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS_7KdTr0xYwdNwnnSKZoZqp3BWqs2wbpQB5Q&s" alt="Bot Profile" class="profile-pic" />
+                  <div class="message-content">
+                    <strong>Bot:</strong><br><br>File uploaded successfully! You can now ask questions about the content.
+                  </div>
+                </div>
+              </div>`;
+          } else {
+            throw new Error(result.message || 'Upload failed');
+          }
+        } catch (error) {
+          chatOutput.innerHTML += `
+            <div class="message-wrapper bot-wrapper">
+              <div class="message bot">
+                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS_7KdTr0xYwdNwnnSKZoZqp3BWqs2wbpQB5Q&s" alt="Bot Profile" class="profile-pic" />
+                <div class="message-content">
+                  <strong>Bot:</strong><br><br>Error uploading file: ${error.message}
+                </div>
+              </div>
+            </div>`;
+        }
+
+        chatOutput.scrollTop = chatOutput.scrollHeight;
+        // Reset file input
+        e.target.value = '';
       });
     </script>
   </body>

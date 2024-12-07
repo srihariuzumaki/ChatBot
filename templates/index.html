@@ -352,6 +352,21 @@
         object-fit: cover;
         filter: blur(3px);
       }
+
+      /* Add this new CSS for the rotating icon */
+      .rotating-icon {
+        display: inline-block;
+        animation: rotate 2s linear infinite;
+      }
+
+      @keyframes rotate {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
     </style>
   </head>
   <body>
@@ -385,7 +400,7 @@
 
     <div class="chat-container">
       <h2 class="text-center">
-        <i class="fas fa-circle-notch"></i> J.A.R.V.I.S
+        <i class="fas fa-circle-notch rotating-icon"></i> J.A.R.V.I.S
       </h2>
 
       <div

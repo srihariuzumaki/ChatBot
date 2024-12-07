@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, render_template, jsonify, session, send_from_directory, make_response
+from flask import Flask, request, render_template, jsonify, session, send_from_directory, make_response, Response
 from werkzeug.utils import secure_filename
 import google.generativeai as genai
 try:
@@ -10,6 +10,9 @@ except ImportError:
     # Provide fallback for file reading
     PyPDF2 = None
     Document = None
+import re
+import requests
+from urllib.parse import quote
 
 # Configure the Gemini API
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
@@ -33,7 +36,16 @@ generation_config = {
 model = genai.GenerativeModel(
     model_name="gemini-1.5-flash",
     generation_config=generation_config,
-    system_instruction="You are a senior computer science student and a mentor. Follow these formatting rules strictly:\n\n1. Always use markdown formatting in your responses\n2. Break down complex explanations into clear sections with headers (##)\n3. Use bullet points (-) or numbered lists (1.) for steps or multiple points\n4. Use code blocks (```) for any code examples\n5. Bold (**) important terms or key concepts\n6. Use horizontal rules (---) to separate major sections\n7. Keep paragraphs short and focused\n\nAt the start of first response, greet the user by name (but only once). Your role is to engage in friendly, curriculum-focused conversations and answer questions in a concise, approachable way. For basic and simple questions, aim to respond with one or two words, but don't be static - add a bit of humor in between the conversation. When explaining concepts, focus only on the essentials, making them easy to understand with relatable analogies and examples. Use humor to make the conversation both educational and enjoyable. For links, provide only valid, accessible websites when requested. For current events, news, or sports updates, use the Gemini tool to provide accurate, up-to-date information. Relate academic concepts to real-world observations and experiments.",
+    system_instruction="""You are a senior computer science student and a mentor. Format your responses in a clean, readable way:
+
+1. Use clear headings without ## symbols
+2. Use bullet points for lists (without showing the - symbol)
+3. Emphasize important terms by mentioning them naturally (without ** symbols)
+4. Present code examples in code blocks
+5. Keep paragraphs short and focused
+6. Use natural language for emphasis instead of markdown symbols
+
+At the start of first response, greet the user by name (but only once). Your role is to engage in friendly, curriculum-focused conversations and answer questions in a concise, approachable way. For basic and simple questions, aim to respond with one or two words, but don't be static - add a bit of humor in between the conversation. When explaining concepts, focus only on the essentials, making them easy to understand with relatable analogies and examples."""
 )
 
 history = []
@@ -207,6 +219,59 @@ def upload_file():
             }), 500
     
     return jsonify({'status': 'error', 'message': 'Invalid file type'}), 400
+
+@app.route('/speak', methods=['POST'])
+def speak():
+    try:
+        text = request.json.get('text')
+        if not text:
+            return jsonify({'error': 'No text provided'}), 400
+            
+        # Get user info from session to remove from speech
+        user_name = session.get('user_name', 'User')
+        
+        # Clean the text by removing markdown and special characters
+        clean_text = re.sub(r'```[\s\S]*?```', '', text)  # Remove code blocks
+        clean_text = re.sub(r'\*\*(.*?)\*\*', r'\1', clean_text)  # Remove bold markers
+        clean_text = re.sub(r'\*', '', clean_text)  # Remove single asterisks
+        clean_text = re.sub(r'^\s*[-•]\s*', '', clean_text, flags=re.MULTILINE)  # Remove bullet points at start of lines
+        clean_text = re.sub(r'^\s*\d+\.\s*', '', clean_text, flags=re.MULTILINE)  # Remove numbered list markers
+        
+        # Handle headers while preserving content
+        lines = clean_text.split('\n')
+        filtered_lines = []
+        for line in lines:
+            if not line.strip().startswith('##'):
+                # Remove period at end of line only if it's a list item
+                if line.strip().startswith('-') or line.strip().startswith('•'):
+                    line = re.sub(r'\.$', '', line.strip())
+                filtered_lines.append(line)
+        clean_text = '\n'.join(filtered_lines)
+        
+        # Remove remaining markdown elements
+        clean_text = re.sub(r'\[(.*?)\]\(.*?\)', r'\1', clean_text)  # Remove links but keep text
+        clean_text = re.sub(r':[a-zA-Z_]+:', '', clean_text)  # Remove emoji codes
+        clean_text = re.sub(r'[\U0001F300-\U0001F9FF]', '', clean_text)  # Remove unicode emojis
+        
+        # Remove any variations of "Hi {name}" or "Hello {name}" or just the name
+        clean_text = re.sub(r'(?i)(hi|hello|hey)\s+' + re.escape(user_name), r'\1', clean_text)
+        clean_text = re.sub(re.escape(user_name), '', clean_text)  # Remove remaining instances of the name
+        
+        # Clean up extra spaces while preserving natural speech pauses
+        lines = clean_text.split('\n')
+        cleaned_lines = []
+        for line in lines:
+            if line.strip():
+                # Keep periods for actual sentences, remove for list items
+                if not (line.strip().startswith('-') or line.strip().startswith('•')):
+                    cleaned_lines.append(' '.join(line.split()))
+                else:
+                    cleaned_lines.append(' '.join(line.split()).rstrip('.'))
+        clean_text = ' '.join(cleaned_lines)
+        
+        return jsonify({'text': clean_text})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

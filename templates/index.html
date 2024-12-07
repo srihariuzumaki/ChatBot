@@ -12,6 +12,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
     />
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600&display=swap");
       body {
@@ -367,6 +368,186 @@
           transform: rotate(360deg);
         }
       }
+
+      .speak-btn {
+        background: none;
+        border: none;
+        color: #0ff;
+        cursor: pointer;
+        padding: 5px;
+        margin-left: 5px;
+        transition: all 0.3s ease;
+      }
+
+      .speak-btn:hover {
+        color: #fff;
+        transform: scale(1.1);
+      }
+
+      .speak-btn.speaking {
+        animation: pulse 1s infinite;
+      }
+
+      @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+      }
+
+      /* Add these styles to handle markdown formatting */
+      .message-content {
+        line-height: 1.6;
+        color: #e6e6e6;
+      }
+
+      .message-content h1 {
+        color: #fff;
+        font-size: 1.8em;
+        margin-bottom: 0.8em;
+        font-weight: 600;
+      }
+
+      .message-content h2 {
+        color: #fff;
+        font-size: 1.4em;
+        margin-top: 1em;
+        margin-bottom: 0.6em;
+        font-weight: 600;
+      }
+
+      .message-content p {
+        margin: 0.7em 0;
+      }
+
+      .message-content ul {
+        margin: 0.5em 0;
+        padding-left: 1.5em;
+      }
+
+      .message-content li {
+        margin: 0.4em 0;
+        position: relative;
+      }
+
+      .message-content strong {
+        color: #ff6b6b;  /* Highlight important terms in red */
+        font-weight: 600;
+      }
+
+      .message-content code {
+        background-color: rgba(40, 44, 52, 0.5);
+        padding: 0.2em 0.4em;
+        border-radius: 3px;
+        font-family: 'Consolas', monospace;
+        font-size: 0.9em;
+      }
+
+      .message-content pre {
+        background-color: rgba(40, 44, 52, 0.5);
+        padding: 1em;
+        border-radius: 5px;
+        overflow-x: auto;
+        margin: 1em 0;
+      }
+
+      /* Update bot message styling */
+      .message.bot {
+        background-color: rgba(32, 33, 35, 0.95);
+        border: none;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      }
+
+      /* Update message wrapper spacing */
+      .message-wrapper {
+        margin: 1.5em 0;
+      }
+
+      /* Add smooth transitions */
+      .message {
+        transition: all 0.2s ease;
+      }
+
+      /* Style the bullet points */
+      .message-content ul li::before {
+        content: "•";
+        color: #ff6b6b;  /* Red bullet points */
+        position: absolute;
+        left: -1em;
+      }
+
+      /* Style code blocks */
+      .message-content pre code {
+        display: block;
+        padding: 0;
+        background-color: transparent;
+      }
+
+      /* Add these markdown-specific styles */
+      .message-content {
+        line-height: 1.6;
+        color: #e6e6e6;
+      }
+
+      /* Style headings */
+      .message-content h1 {
+        font-size: 24px;
+        color: #ffffff;
+        margin: 20px 0 15px 0;
+        font-weight: 600;
+      }
+
+      .message-content h2 {
+        font-size: 20px;
+        color: #ffffff;
+        margin: 18px 0 12px 0;
+        font-weight: 600;
+      }
+
+      /* Style bold text */
+      .message-content strong {
+        color: #ff6b6b;  /* Highlighted terms in red */
+        font-weight: 500;
+      }
+
+      /* Style bullet points */
+      .message-content ul {
+        margin: 10px 0;
+        padding-left: 20px;
+        list-style: none;
+      }
+
+      .message-content ul li {
+        position: relative;
+        padding-left: 15px;
+        margin: 8px 0;
+      }
+
+      .message-content ul li::before {
+        content: "•";
+        color: #ff6b6b;
+        position: absolute;
+        left: -5px;
+      }
+
+      /* Style paragraphs */
+      .message-content p {
+        margin: 10px 0;
+        line-height: 1.6;
+      }
+
+      /* Style code blocks */
+      .message-content pre {
+        background-color: rgba(40, 44, 52, 0.5);
+        padding: 15px;
+        border-radius: 5px;
+        margin: 15px 0;
+        overflow-x: auto;
+      }
+
+      .message-content code {
+        font-family: 'Consolas', monospace;
+        font-size: 14px;
+      }
     </style>
   </head>
   <body>
@@ -559,12 +740,22 @@
 
         // Remove typing indicator and add bot response
         document.getElementById("typing-indicator").remove();
+        const messageId = `message-${Date.now()}`;
         chatOutput.innerHTML += `
           <div class="message-wrapper bot-wrapper">
             <div class="message bot">
               <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS_7KdTr0xYwdNwnnSKZoZqp3BWqs2wbpQB5Q&s" alt="Bot Profile" class="profile-pic" />
               <div class="message-content">
-                <strong>Bot:</strong><br><br> ${formatBotResponse(botResponse)}
+                <div style="display: flex; align-items: center; gap: 5px;">
+                  <strong>Bot:</strong>
+                  <button class="speak-btn" onclick="speakText(this, '${messageId}')" title="Listen to response">
+                    <i class="fas fa-volume-up"></i>
+                  </button>
+                </div>
+                <br><br>
+                <div id="${messageId}">
+                  ${formatBotResponse(botResponse)}
+                </div>
               </div>
             </div>
           </div>`;
@@ -689,6 +880,178 @@
         // Reset file input
         e.target.value = '';
       });
+    </script>
+
+    <script>
+      let voices = [];
+
+      // Initialize voices as soon as possible
+      function initVoices() {
+          voices = window.speechSynthesis.getVoices();
+      }
+
+      // Set up voice loading
+      if (window.speechSynthesis.onvoiceschanged !== undefined) {
+          window.speechSynthesis.onvoiceschanged = initVoices;
+      }
+
+      function speakText(button, messageId) {
+          const synth = window.speechSynthesis;
+          
+          // If already speaking, stop
+          if (button.classList.contains('speaking')) {
+              synth.cancel();
+              button.classList.remove('speaking');
+              button.innerHTML = '<i class="fas fa-volume-up"></i>';
+              return;
+          }
+
+          // Get the message text
+          const messageElement = document.getElementById(messageId);
+          const messageText = messageElement.textContent;
+
+          // Clean the text through our backend
+          fetch('/speak', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ text: messageText })
+          })
+          .then(response => response.json())
+          .then(data => {
+              if (data.error) throw new Error(data.error);
+              
+              const utterance = new SpeechSynthesisUtterance(data.text);
+              
+              // Make sure voices are loaded
+              if (voices.length === 0) {
+                  voices = window.speechSynthesis.getVoices();
+              }
+              
+              // Try to find a good voice
+              const preferredVoice = voices.find(voice => 
+                  voice.name.includes('Natural') || 
+                  voice.name.includes('Neural') ||
+                  voice.name.includes('Premium') ||
+                  (voice.name.includes('Google') && voice.lang.startsWith('en')) ||
+                  voice.lang === 'en-US' ||
+                  voice.lang === 'en-GB'
+              );
+              
+              if (preferredVoice) {
+                  utterance.voice = preferredVoice;
+              }
+              
+              // Configure speech for more natural sound
+              utterance.rate = 0.9;  // Slightly slower than default
+              utterance.pitch = 1.0; // Natural pitch
+              utterance.volume = 1.0;
+              
+              // Add natural pauses at punctuation
+              utterance.text = data.text.replace(/([.!?])\s+/g, '$1\n');
+              
+              // Handle speech events
+              utterance.onstart = () => {
+                  button.classList.add('speaking');
+                  button.innerHTML = '<i class="fas fa-volume-mute"></i>';
+              };
+              
+              utterance.onend = () => {
+                  button.classList.remove('speaking');
+                  button.innerHTML = '<i class="fas fa-volume-up"></i>';
+              };
+              
+              utterance.onerror = (event) => {
+                  console.error('Speech synthesis error:', event);
+                  button.classList.remove('speaking');
+                  button.innerHTML = '<i class="fas fa-volume-up"></i>';
+              };
+
+              // Speak the text
+              synth.cancel(); // Cancel any ongoing speech
+              synth.speak(utterance);
+          })
+          .catch(error => {
+              console.error('Error:', error);
+              button.classList.remove('speaking');
+              button.innerHTML = '<i class="fas fa-volume-up"></i>';
+              alert('Error generating speech: ' + error.message);
+          });
+      }
+
+      // Initialize voices immediately if available
+      initVoices();
+    </script>
+
+    <script>
+      // Update marked configuration for better rendering
+      marked.setOptions({
+        breaks: true,
+        gfm: true,
+        headerIds: false,
+        mangle: false,
+        highlight: function(code, lang) {
+          return code;
+        },
+        renderer: new marked.Renderer()
+      });
+
+      // Customize the markdown renderer
+      const renderer = new marked.Renderer();
+      
+      // Remove ## from headers
+      renderer.heading = function(text, level) {
+        return `<h${level}>${text}</h${level}>`;
+      };
+
+      // Remove ** from bold text
+      renderer.strong = function(text) {
+        return `<strong>${text}</strong>`;
+      };
+
+      // Update marked options with custom renderer
+      marked.setOptions({ renderer: renderer });
+
+      function addMessageToChat(message, isUser = false) {
+        const messageId = 'msg-' + Date.now();
+        let messageHTML = '';
+        
+        if (isUser) {
+          messageHTML = `
+            <div class="message-wrapper user-wrapper">
+              <div class="message user">
+                <div class="message-content">
+                  <strong>You:</strong><br>${message}
+                </div>
+                <img src="static/user-profile.png" alt="User Profile" class="profile-pic" />
+              </div>
+            </div>`;
+        } else {
+          // Parse markdown for bot messages with custom renderer
+          const parsedMessage = marked.parse(message);
+          messageHTML = `
+            <div class="message-wrapper bot-wrapper">
+              <div class="message bot">
+                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS_7KdTr0xYwdNwnnSKZoZqp3BWqs2wbpQB5Q&s" alt="Bot Profile" class="profile-pic" />
+                <div class="message-content" id="${messageId}">
+                  ${parsedMessage}
+                </div>
+                <button onclick="speakText(this, '${messageId}')" class="speak-button">
+                  <i class="fas fa-volume-up"></i>
+                </button>
+              </div>
+            </div>`;
+        }
+        
+        chatOutput.innerHTML += messageHTML;
+        chatOutput.scrollTop = chatOutput.scrollHeight;
+
+        // Add syntax highlighting to code blocks if any
+        document.querySelectorAll('pre code').forEach((block) => {
+          block.style.backgroundColor = 'rgba(40, 44, 52, 0.5)';
+        });
+      }
     </script>
   </body>
 </html>

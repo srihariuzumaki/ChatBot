@@ -372,7 +372,13 @@
           placeholder="Enter your name"
           required
         />
-        <input type="text" id="userAge" placeholder="Enter your age" required />
+        <input
+          type="text"
+          id="userAge"
+          placeholder="Enter your age"
+          required
+          onkeypress="handleKeyPress(event)"
+        />
         <button onclick="submitUserInfo()">Enter</button>
       </div>
     </div>
@@ -429,9 +435,16 @@
         age: "",
       };
 
+      function handleKeyPress(event) {
+        if (event.key === 'Enter') {
+          event.preventDefault(); // Prevent default form submission
+          submitUserInfo();
+        }
+      }
+
       function submitUserInfo() {
-        const name = document.getElementById("userName").value;
-        const age = document.getElementById("userAge").value;
+        const name = document.getElementById("userName").value.trim();
+        const age = document.getElementById("userAge").value.trim();
 
         if (!name || !age) {
           alert("Please fill in both fields");

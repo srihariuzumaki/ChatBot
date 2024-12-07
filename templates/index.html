@@ -15,12 +15,20 @@
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600&display=swap");
       body {
-        /* Replace background-color with background image and properties */
-        background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
-          url("https://plus.unsplash.com/premium_photo-1673413558326-341c34f66db1?q=80&w=1964&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D");
-        background-size: cover;
-        background-attachment: fixed;
-        font-family: "Rajdhani", sans-serif; /* More tech-looking font */
+        font-family: "Rajdhani", sans-serif;
+        position: relative;
+        color: #fff;
+      }
+
+      body::after {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: -1;
       }
 
       .chat-container {
@@ -256,7 +264,6 @@
         align-items: center;
         justify-content: center;
         transition: all 0.3s ease;
-        
       }
 
       .send-btn i {
@@ -323,22 +330,49 @@
         color: #fff;
       }
 
-      
+      .video-background {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        overflow: hidden;
+      }
 
-      
-
-      
-      
-    
-      
+      .video-background video {
+        min-width: 100%;
+        min-height: 100%;
+        width: auto;
+        height: auto;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        object-fit: cover;
+        filter: blur(3px);
+      }
     </style>
   </head>
   <body>
+    <div class="video-background">
+      <video autoplay muted loop playsinline preload="auto" id="bgVideo">
+        <source src="static/background.mp4?v=1" type="video/mp4" />
+        <source src="static/background.webm?v=1" type="video/webm" />
+        <img src="static/fallback-bg.jpg" alt="Background fallback image" />
+      </video>
+    </div>
+
     <div id="welcomeModal" class="modal">
       <div class="modal-content">
         <h2>Welcome to J.A.R.V.I.S.</h2>
-        <input type="text" id="userName" placeholder="Enter your name" required>
-        <input type="text" id="userAge" placeholder="Enter your age" required>
+        <input
+          type="text"
+          id="userName"
+          placeholder="Enter your name"
+          required
+        />
+        <input type="text" id="userAge" placeholder="Enter your age" required />
         <button onclick="submitUserInfo()">Enter</button>
       </div>
     </div>
@@ -382,8 +416,8 @@
       const chatOutput = document.getElementById("chat-output");
 
       let userInfo = {
-        name: '',
-        age: ''
+        name: "",
+        age: "",
       };
 
       function submitUserInfo() {
@@ -398,21 +432,25 @@
         // Using XMLHttpRequest instead of fetch
         const xhr = new XMLHttpRequest();
         xhr.open("POST", "/save_user_info", true);
-        xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-        
-        xhr.onreadystatechange = function() {
+        xhr.setRequestHeader(
+          "Content-Type",
+          "application/x-www-form-urlencoded"
+        );
+
+        xhr.onreadystatechange = function () {
           if (xhr.readyState === 4) {
-            console.log("Response:", xhr.responseText);  // Debug log
-            
+            console.log("Response:", xhr.responseText); // Debug log
+
             if (xhr.status === 200) {
               try {
                 const response = JSON.parse(xhr.responseText);
-                if (response.status === 'success') {
+                if (response.status === "success") {
                   userInfo.name = name;
                   userInfo.age = age;
-                  document.getElementById("welcomeModal").style.display = "none";
+                  document.getElementById("welcomeModal").style.display =
+                    "none";
                 } else {
-                  throw new Error(response.message || 'Unknown error');
+                  throw new Error(response.message || "Unknown error");
                 }
               } catch (e) {
                 console.error("Error parsing response:", e);
@@ -420,12 +458,16 @@
               }
             } else {
               console.error("Server returned status:", xhr.status);
-              alert("There was an error saving your information. Please try again.");
+              alert(
+                "There was an error saving your information. Please try again."
+              );
             }
           }
         };
 
-        const data = `name=${encodeURIComponent(name)}&age=${encodeURIComponent(age)}`;
+        const data = `name=${encodeURIComponent(name)}&age=${encodeURIComponent(
+          age
+        )}`;
         xhr.send(data);
       }
 
@@ -446,7 +488,7 @@
           </div>`;
 
         // Add typing indicator
-        const typingIndicator = document.createElement('div');
+        const typingIndicator = document.createElement("div");
         typingIndicator.id = "typing-indicator";
         typingIndicator.innerHTML = `
           <div class="message-wrapper bot-wrapper">
@@ -470,7 +512,9 @@
         });
 
         // Show typing indicator for minimum 500ms
-        const minTypingTime = new Promise(resolve => setTimeout(resolve, 500));
+        const minTypingTime = new Promise((resolve) =>
+          setTimeout(resolve, 500)
+        );
 
         // Wait for both the response and minimum typing time
         const [response] = await Promise.all([responsePromise, minTypingTime]);
@@ -525,13 +569,30 @@
       }
 
       // Show modal when page loads
-      window.onload = function() {
-          document.getElementById("welcomeModal").style.display = "block";
+      window.onload = function () {
+        document.getElementById("welcomeModal").style.display = "block";
       };
 
       // Add this function to send user info to iframe
-      
     </script>
 
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const video = document.getElementById("bgVideo");
+
+        // Log video loading status
+        video.addEventListener("loadeddata", function () {
+          console.log("Video loaded successfully");
+        });
+
+        video.addEventListener("error", function (e) {
+          console.error("Error loading video:", e);
+          console.log("Video source:", video.currentSrc);
+        });
+
+        // Force reload video
+        video.load();
+      });
+    </script>
   </body>
 </html>

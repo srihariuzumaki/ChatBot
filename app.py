@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, render_template, jsonify
+from flask import Flask, request, render_template, jsonify, session, send_from_directory, make_response
 import google.generativeai as genai
 from flask import jsonify
 from flask import session
@@ -8,7 +8,7 @@ from flask import session
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 # Set up the Flask app
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static')
 app.secret_key = 'your-secret-key-here'  # replace with a real secret key
 
 # Enable debug mode
@@ -83,6 +83,16 @@ def ask():
     history.append({"role": "model", "parts": [model_response]})
 
     return model_response
+
+@app.route('/static/<path:path>')
+def send_static(path):
+    response = make_response(send_from_directory('static', path))
+    # Disable caching for video files
+    if path.endswith(('.mp4', '.webm')):
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+    return response
 
 if __name__ == '__main__':
     app.run(debug=True)

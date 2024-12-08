@@ -922,7 +922,16 @@
           .then(data => {
               if (data.error) throw new Error(data.error);
               
-              const utterance = new SpeechSynthesisUtterance(data.text);
+              const utterance = new SpeechSynthesisUtterance();
+              
+              // Configure speech for more natural sound
+              utterance.rate = 1.1;
+              utterance.pitch = 1.0;
+              utterance.volume = 1.0;
+              
+              // Clean the SSML tags and convert to actual pauses
+              const cleanText = data.text.replace(/<break time="(\d+\.?\d*)s"\/>/g, '...');
+              utterance.text = cleanText;
               
               // Make sure voices are loaded
               if (voices.length === 0) {
@@ -942,14 +951,6 @@
               if (preferredVoice) {
                   utterance.voice = preferredVoice;
               }
-              
-              // Configure speech for more natural sound
-              utterance.rate = 0.9;  // Slightly slower than default
-              utterance.pitch = 1.0; // Natural pitch
-              utterance.volume = 1.0;
-              
-              // Add natural pauses at punctuation
-              utterance.text = data.text.replace(/([.!?])\s+/g, '$1\n');
               
               // Handle speech events
               utterance.onstart = () => {

@@ -264,36 +264,30 @@ def speak():
         if not text:
             return jsonify({'error': 'No text provided'}), 400
             
-        # Get user info from session to remove from speech
         user_name = session.get('user_name', 'User')
         
-        # Clean the text
-        clean_text = re.sub(r'```[\s\S]*?```', '', text)  # Remove code blocks
-        clean_text = re.sub(r'\*\*(.*?)\*\*', r'\1', clean_text)  # Remove bold markers
-        clean_text = re.sub(r'\*', '', clean_text)  # Remove single asterisks
-        clean_text = re.sub(r'^\s*[-•]\s*', '', clean_text, flags=re.MULTILINE)  # Remove bullet points
-        clean_text = re.sub(r'^\s*\d+\.\s*', '', clean_text, flags=re.MULTILINE)  # Remove numbered list markers
+        # Remove user name and "Bot:" prefix
+        clean_text = re.sub(r'(?i)' + re.escape(user_name) + r'[:,]?\s*', '', text)
+        clean_text = re.sub(r'Bot:\s*', '', clean_text)
+        
+        # Basic text cleaning
+        clean_text = re.sub(r'```[\s\S]*?```', '', clean_text)
+        clean_text = re.sub(r'\*\*(.*?)\*\*', r'\1', clean_text)
+        clean_text = re.sub(r'\*', '', clean_text)
         
         # Split into paragraphs and clean each
         paragraphs = clean_text.split('\n\n')
         cleaned_paragraphs = []
         for para in paragraphs:
             if para.strip():
-                # Clean the paragraph
                 clean_para = ' '.join(para.split())
-                # Remove period at end if it's a list item
-                if clean_para.strip().startswith('-') or clean_para.strip().startswith('•'):
-                    clean_para = clean_para.rstrip('.')
                 cleaned_paragraphs.append(clean_para)
         
-        # Join paragraphs with SSML pause
-        clean_text = '\n\n'.join(cleaned_paragraphs)
+        # Join with pauses
+        clean_text = '. '.join(cleaned_paragraphs)
         
-        # Add SSML pauses after periods
+        # Add natural pauses
         clean_text = re.sub(r'\.(?=\s|$)', '. <break time="0.5s"/>', clean_text)
-        
-        # Add longer pauses between paragraphs
-        clean_text = clean_text.replace('\n\n', '<break time="1s"/>')
         
         return jsonify({'text': clean_text})
     except Exception as e:

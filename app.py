@@ -13,6 +13,8 @@ except ImportError:
 import re
 import requests
 from urllib.parse import quote
+from dotenv import load_dotenv
+from flask_session import Session
 
 # Configure the Gemini API
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
@@ -50,13 +52,16 @@ At the start of first response, greet the user by name (but only once). Your rol
 
 history = []
 
-UPLOAD_FOLDER = 'uploads'
+UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'doc', 'docx'}
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['SESSION_TYPE'] = 'filesystem'
+Session(app)
 
 # Create uploads directory if it doesn't exist
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -133,40 +138,47 @@ def save_user_info():
 
 @app.route('/ask', methods=['POST'])
 def ask():
-    user_input = request.form['user_input']
-    
-    # Get user info from session
-    user_name = session.get('user_name', 'User')
-    user_age = session.get('user_age', 'Unknown')
-    
-    # Get uploaded file content if available
-    file_content = ""
-    if 'uploaded_file' in session:
-        filepath = session['uploaded_file']
-        if os.path.exists(filepath):
-            file_content = read_file_content(filepath)
-    
-    # Create context-aware message with file content
-    context_message = (
-        f"Remember that you're talking to {user_name}, who is {user_age} years old.\n\n"
-        f"{'Here is the content of the uploaded file:\n\n' + file_content + '\n\n' if file_content else ''}"
-        f"Based on the above context (if any), please answer this question: {user_input}"
-    )
-    
-    # Limit context size if needed
-    max_context_length = 30000  # Adjust based on model's limitations
-    if len(context_message) > max_context_length:
-        context_message = context_message[:max_context_length] + "... (content truncated)"
-    
-    chat_session = model.start_chat(history=history)
-    response = chat_session.send_message(context_message)
-    model_response = response.text
+    try:
+        user_input = request.form['user_input']
+        if not user_input:
+            return "Please provide a question", 400
 
-    # Store messages in history with context
-    history.append({"role": "user", "parts": [user_input]})  # Store only user's question
-    history.append({"role": "model", "parts": [model_response]})
+        # Get user info from session
+        user_name = session.get('user_name', 'User')
+        user_age = session.get('user_age', 'Unknown')
+        
+        # Get uploaded file content if available
+        file_content = ""
+        if 'uploaded_file' in session:
+            filepath = session['uploaded_file']
+            if os.path.exists(filepath):
+                file_content = read_file_content(filepath)
+        
+        # Create context-aware message with file content
+        context_message = (
+            f"Remember that you're talking to {user_name}, who is {user_age} years old.\n\n"
+            f"{'Here is the content of the uploaded file:\n\n' + file_content + '\n\n' if file_content else ''}"
+            f"Based on the above context (if any), please answer this question: {user_input}"
+        )
+        
+        # Limit context size if needed
+        max_context_length = 30000  # Adjust based on model's limitations
+        if len(context_message) > max_context_length:
+            context_message = context_message[:max_context_length] + "... (content truncated)"
+        
+        chat_session = model.start_chat(history=history)
+        response = chat_session.send_message(context_message)
+        model_response = response.text
 
-    return model_response
+        # Store messages in history with context
+        history.append({"role": "user", "parts": [user_input]})  # Store only user's question
+        history.append({"role": "model", "parts": [model_response]})
+
+        return model_response
+
+    except Exception as e:
+        print(f"Error in ask route: {str(e)}")
+        return str(e), 500
 
 @app.route('/static/<path:path>')
 def send_static(path):
@@ -274,4 +286,5 @@ def speak():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    is_development = os.getenv('FLASK_ENV') != 'production'
+    app.run(debug=is_development)

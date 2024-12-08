@@ -15,6 +15,10 @@ import requests
 from urllib.parse import quote
 from dotenv import load_dotenv
 from flask_session import Session
+from io import BytesIO
+
+# Global storage for uploaded files
+UPLOAD_STORAGE = {}
 
 # Set up the Flask app
 app = Flask(__name__)
@@ -70,36 +74,34 @@ app.config['SESSION_TYPE'] = 'null'
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def read_file_content(filepath):
-    """Read content from different file types"""
-    file_extension = filepath.lower().split('.')[-1]
+def read_file_content(file_data, filename):
+    """Read content from different file types stored in memory"""
+    file_extension = filename.lower().split('.')[-1]
     
     try:
         if file_extension == 'txt':
-            with open(filepath, 'r', encoding='utf-8') as file:
-                return file.read()
+            return file_data.decode('utf-8')
                 
         elif file_extension == 'pdf':
             if PyPDF2 is None:
                 return "PDF support not available. Please install PyPDF2."
             content = []
-            with open(filepath, 'rb') as file:
-                pdf_reader = PyPDF2.PdfReader(file)
-                for page in pdf_reader.pages:
-                    content.append(page.extract_text())
+            pdf_reader = PyPDF2.PdfReader(BytesIO(file_data))
+            for page in pdf_reader.pages:
+                content.append(page.extract_text())
             return '\n'.join(content)
             
         elif file_extension in ['doc', 'docx']:
             if Document is None:
                 return "DOC/DOCX support not available. Please install python-docx."
-            doc = Document(filepath)
+            doc = Document(BytesIO(file_data))
             return '\n'.join([paragraph.text for paragraph in doc.paragraphs])
             
         else:
             return "Unsupported file format"
             
     except Exception as e:
-        print(f"Error reading file {filepath}: {str(e)}")
+        print(f"Error reading file {filename}: {str(e)}")
         return f"Error reading file: {str(e)}"
 
 @app.route('/')
@@ -154,9 +156,10 @@ def ask():
         # Get uploaded file content if available
         file_content = ""
         if 'uploaded_file' in session:
-            filepath = session['uploaded_file']
-            if os.path.exists(filepath):
-                file_content = read_file_content(filepath)
+            file_key = session['uploaded_file']
+            if file_key in UPLOAD_STORAGE:
+                file_data = UPLOAD_STORAGE[file_key]
+                file_content = read_file_content(file_data['data'], file_data['filename'])
         
         # Create context-aware message with file content
         context_message = (
@@ -196,12 +199,6 @@ def send_static(path):
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
-    if os.getenv('FLASK_ENV') == 'production':
-        return jsonify({
-            'status': 'error',
-            'message': 'File uploads are not supported in production environment'
-        }), 400
-        
     if 'file' not in request.files:
         return jsonify({'status': 'error', 'message': 'No file part'}), 400
     
@@ -211,23 +208,25 @@ def upload_file():
     
     if file and allowed_file(file.filename):
         try:
-            # Clean up previous file if it exists
-            if 'uploaded_file' in session:
-                old_filepath = session['uploaded_file']
-                if os.path.exists(old_filepath):
-                    os.remove(old_filepath)
+            # Read file into memory
+            file_data = file.read()
             
-            filename = secure_filename(file.filename)
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(filepath)
+            # Generate unique key for storage
+            file_key = f"{session.get('user_name', 'user')}_{secure_filename(file.filename)}"
+            
+            # Store in memory
+            UPLOAD_STORAGE[file_key] = {
+                'data': file_data,
+                'filename': file.filename
+            }
+            
+            # Store the key in session
+            session['uploaded_file'] = file_key
             
             # Test if we can read the file
-            content = read_file_content(filepath)
+            content = read_file_content(file_data, file.filename)
             if content.startswith("Error reading file"):
                 raise Exception(content)
-            
-            # Store the filepath in session
-            session['uploaded_file'] = filepath
             
             return jsonify({
                 'status': 'success',

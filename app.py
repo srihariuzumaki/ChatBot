@@ -159,13 +159,20 @@ def ask():
             file_key = session['uploaded_file']
             if file_key in UPLOAD_STORAGE:
                 file_data = UPLOAD_STORAGE[file_key]
-                file_content = read_file_content(file_data['data'], file_data['filename'])
-        
+                try:
+                    file_content = read_file_content(file_data['data'], file_data['filename'])
+                    print(f"File content read successfully: {len(file_content)} characters")
+                except Exception as e:
+                    print(f"Error reading file content: {str(e)}")
+                    file_content = "Error reading file content"
+
         # Create context-aware message with file content
         context_message = (
-            f"Remember that you're talking to {user_name}, who is {user_age} years old.\n\n"
-            f"{'Here is the content of the uploaded file:\n\n' + file_content + '\n\n' if file_content else ''}"
-            f"Based on the above context (if any), please answer this question: {user_input}"
+            f"Context: You are talking to {user_name}, who is {user_age} years old.\n\n"
+            f"File Content: {file_content}\n\n"
+            f"User Question: {user_input}\n\n"
+            f"Instructions: If the question is about the file content, use the provided file content to answer. "
+            f"If the file content is relevant, explicitly reference it in your answer."
         )
         
         # Limit context size if needed

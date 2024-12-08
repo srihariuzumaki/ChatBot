@@ -930,8 +930,7 @@
               utterance.volume = 1.0;
               
               // Clean the SSML tags and convert to actual pauses
-              const cleanText = data.text.replace(/<break time="(\d+\.?\d*)s"\/>/g, '...');
-              utterance.text = cleanText;
+              
               
               // Make sure voices are loaded
               if (voices.length === 0) {

@@ -1053,5 +1053,28 @@
         });
       }
     </script>
+
+    <script>
+      function speak(text) {
+          // Create utterance
+          const utterance = new SpeechSynthesisUtterance(text);
+          
+          // Configure speech for more natural sound
+          utterance.rate = 1.1;  // Increased speed
+          utterance.pitch = 1.0; // Natural pitch
+          utterance.volume = 1.0;
+
+          utterance.text = data.text.replace(/<break time="(\d+\.?\d*)s"\/>/g, '\n\n');
+          
+          // Select the female voice if available
+          const femaleVoice = voices.find(voice => voice.name.includes('female') || voice.name.includes('Female'));
+          if (femaleVoice) {
+              utterance.voice = femaleVoice;
+          }
+          
+          // Speak the text
+          speechSynthesis.speak(utterance);
+      }
+    </script>
   </body>
 </html>

@@ -153,9 +153,13 @@ def ask():
         user_name = session.get('user_name', 'User')
         user_age = session.get('user_age', 'Unknown')
         
-        # Get uploaded file content if available
+        # Check if the question is about file content
+        file_related_keywords = ['file', 'document', 'content', 'text', 'read', 'uploaded']
+        is_file_related = any(keyword in user_input.lower() for keyword in file_related_keywords)
+        
+        # Get uploaded file content only if question is related
         file_content = ""
-        if 'uploaded_file' in session:
+        if is_file_related and 'uploaded_file' in session:
             file_key = session['uploaded_file']
             if file_key in UPLOAD_STORAGE:
                 file_data = UPLOAD_STORAGE[file_key]
@@ -166,14 +170,19 @@ def ask():
                     print(f"Error reading file content: {str(e)}")
                     file_content = "Error reading file content"
 
-        # Create context-aware message with file content
-        context_message = (
-            f"Context: You are talking to {user_name}, who is {user_age} years old.\n\n"
-            f"File Content: {file_content}\n\n"
-            f"User Question: {user_input}\n\n"
-            f"Instructions: If the question is about the file content, use the provided file content to answer. "
-            f"If the file content is relevant, explicitly reference it in your answer."
-        )
+        # Create context-aware message
+        if is_file_related and file_content:
+            context_message = (
+                f"Context: You are talking to {user_name}, who is {user_age} years old.\n\n"
+                f"File Content: {file_content}\n\n"
+                f"User Question: {user_input}\n\n"
+                f"Instructions: Please answer the question using the provided file content."
+            )
+        else:
+            context_message = (
+                f"Context: You are talking to {user_name}, who is {user_age} years old.\n\n"
+                f"User Question: {user_input}"
+            )
         
         # Limit context size if needed
         max_context_length = 30000  # Adjust based on model's limitations
@@ -258,44 +267,33 @@ def speak():
         # Get user info from session to remove from speech
         user_name = session.get('user_name', 'User')
         
-        # Clean the text by removing markdown and special characters
+        # Clean the text
         clean_text = re.sub(r'```[\s\S]*?```', '', text)  # Remove code blocks
         clean_text = re.sub(r'\*\*(.*?)\*\*', r'\1', clean_text)  # Remove bold markers
         clean_text = re.sub(r'\*', '', clean_text)  # Remove single asterisks
-        clean_text = re.sub(r'^\s*[-•]\s*', '', clean_text, flags=re.MULTILINE)  # Remove bullet points at start of lines
+        clean_text = re.sub(r'^\s*[-•]\s*', '', clean_text, flags=re.MULTILINE)  # Remove bullet points
         clean_text = re.sub(r'^\s*\d+\.\s*', '', clean_text, flags=re.MULTILINE)  # Remove numbered list markers
         
-        # Handle headers while preserving content
-        lines = clean_text.split('\n')
-        filtered_lines = []
-        for line in lines:
-            if not line.strip().startswith('##'):
-                # Remove period at end of line only if it's a list item
-                if line.strip().startswith('-') or line.strip().startswith('•'):
-                    line = re.sub(r'\.$', '', line.strip())
-                filtered_lines.append(line)
-        clean_text = '\n'.join(filtered_lines)
+        # Split into paragraphs and clean each
+        paragraphs = clean_text.split('\n\n')
+        cleaned_paragraphs = []
+        for para in paragraphs:
+            if para.strip():
+                # Clean the paragraph
+                clean_para = ' '.join(para.split())
+                # Remove period at end if it's a list item
+                if clean_para.strip().startswith('-') or clean_para.strip().startswith('•'):
+                    clean_para = clean_para.rstrip('.')
+                cleaned_paragraphs.append(clean_para)
         
-        # Remove remaining markdown elements
-        clean_text = re.sub(r'\[(.*?)\]\(.*?\)', r'\1', clean_text)  # Remove links but keep text
-        clean_text = re.sub(r':[a-zA-Z_]+:', '', clean_text)  # Remove emoji codes
-        clean_text = re.sub(r'[\U0001F300-\U0001F9FF]', '', clean_text)  # Remove unicode emojis
+        # Join paragraphs with SSML pause
+        clean_text = '\n\n'.join(cleaned_paragraphs)
         
-        # Remove any variations of "Hi {name}" or "Hello {name}" or just the name
-        clean_text = re.sub(r'(?i)(hi|hello|hey)\s+' + re.escape(user_name), r'\1', clean_text)
-        clean_text = re.sub(re.escape(user_name), '', clean_text)  # Remove remaining instances of the name
+        # Add SSML pauses after periods
+        clean_text = re.sub(r'\.(?=\s|$)', '. <break time="0.5s"/>', clean_text)
         
-        # Clean up extra spaces while preserving natural speech pauses
-        lines = clean_text.split('\n')
-        cleaned_lines = []
-        for line in lines:
-            if line.strip():
-                # Keep periods for actual sentences, remove for list items
-                if not (line.strip().startswith('-') or line.strip().startswith('•')):
-                    cleaned_lines.append(' '.join(line.split()))
-                else:
-                    cleaned_lines.append(' '.join(line.split()).rstrip('.'))
-        clean_text = ' '.join(cleaned_lines)
+        # Add longer pauses between paragraphs
+        clean_text = clean_text.replace('\n\n', '<break time="1s"/>')
         
         return jsonify({'text': clean_text})
     except Exception as e:

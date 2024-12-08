@@ -929,8 +929,7 @@
               utterance.pitch = 1.0;
               utterance.volume = 1.0;
               
-              // Clean the SSML tags and convert to actual pauses
-              
+              utterance.text = data.text;  // Use the clean text directly
               
               // Make sure voices are loaded
               if (voices.length === 0) {

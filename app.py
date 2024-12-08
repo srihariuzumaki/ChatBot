@@ -283,11 +283,8 @@ def speak():
                 clean_para = ' '.join(para.split())
                 cleaned_paragraphs.append(clean_para)
         
-        # Join with pauses
-        clean_text = '. '.join(cleaned_paragraphs)
-        
-        # Add natural pauses
-        clean_text = re.sub(r'\.(?=\s|$)', '. <break time="0.5s"/>', clean_text)
+        # Join with simple pause markers
+        clean_text = '. ... '.join(cleaned_paragraphs)
         
         return jsonify({'text': clean_text})
     except Exception as e:

@@ -16,12 +16,15 @@ from urllib.parse import quote
 from dotenv import load_dotenv
 from flask_session import Session
 
-# Configure the Gemini API
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-
 # Set up the Flask app
-app = Flask(__name__, static_folder='static')
-app.secret_key = 'your-secret-key-here'  # replace with a real secret key
+app = Flask(__name__)
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'your-dev-secret-key')
+
+# Configure the Gemini API with error handling
+try:
+    genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+except Exception as e:
+    print(f"Error configuring Gemini API: {str(e)}")
 
 # Enable debug mode
 app.debug = True
@@ -52,16 +55,17 @@ At the start of first response, greet the user by name (but only once). Your rol
 
 history = []
 
-UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
+if os.getenv('FLASK_ENV') == 'production':
+    UPLOAD_FOLDER = None
+else:
+    UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
+    if not os.path.exists(UPLOAD_FOLDER):
+        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'doc', 'docx'}
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['SESSION_TYPE'] = 'filesystem'
-Session(app)
-
-# Create uploads directory if it doesn't exist
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config['SESSION_TYPE'] = 'null'
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -192,6 +196,12 @@ def send_static(path):
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
+    if os.getenv('FLASK_ENV') == 'production':
+        return jsonify({
+            'status': 'error',
+            'message': 'File uploads are not supported in production environment'
+        }), 400
+        
     if 'file' not in request.files:
         return jsonify({'status': 'error', 'message': 'No file part'}), 400
     
@@ -284,6 +294,20 @@ def speak():
         return jsonify({'text': clean_text})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.errorhandler(500)
+def handle_500_error(error):
+    return jsonify({
+        'error': 'Internal Server Error',
+        'message': str(error)
+    }), 500
+
+@app.errorhandler(Exception)
+def handle_exception(error):
+    return jsonify({
+        'error': 'Unexpected Error',
+        'message': str(error)
+    }), 500
 
 if __name__ == '__main__':
     is_development = os.getenv('FLASK_ENV') != 'production'

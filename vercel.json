@@ -15,6 +15,7 @@
     ],
     "env": {
         "PYTHONPATH": ".",
-        "FLASK_ENV": "production"
+        "FLASK_ENV": "production",
+        "FLASK_APP": "app.py"
     }
 }
